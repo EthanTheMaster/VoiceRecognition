@@ -7,23 +7,23 @@ def normalizeAudio(audio):
 	return audio.astype(float) / audio.max()
 
 #Read in wav data
-ethanTestData = wav.read("EthanTest2.wav")
-katieTestData = wav.read("KatieTest2.wav")
+#audioFilesData is a list of tuples containing the audio file data and the corresponding classification
+audioFilesData = []
+audioFilesData.append((wav.read("EthanTest2.wav"), [1,0]))
+audioFilesData.append((wav.read("KatieTest2.wav"), [0,1]))
 
-#Extract the voice data
-print("Getting Voice Data")
-ethanTestVoice = ethanTestData[1]
-katieTestVoice = katieTestData[1]
+audioRate = audioFilesData[0][0][0]
+
+#Extract the voice data and normalize the voice
+print("Extracting and Normalizing Voice Data")
+
+#iterate through each "row" in audioFilesData and normalize the audio data on scale from -1 to 1 and keep the classification
+audioFilesData = [(normalizeAudio(audioFilesData[i][0][1]), audioFilesData[i][1]) for i in range(len(audioFilesData))]
+
 
 ethanSampleVoice = wav.read("EthanSample.wav")[1]
 katieSampleVoice = wav.read("KatieSample.wav")[1]
 
-audioRate = ethanTestData[0]
-
-#Normalize audio on scale from -1 to 1
-print("Normalizing Data")
-ethanTestVoice = normalizeAudio(ethanTestVoice)
-katieTestVoice = normalizeAudio(katieTestVoice)
 ethanSampleVoice = normalizeAudio(ethanSampleVoice)
 katieSampleVoice = normalizeAudio(katieSampleVoice)
 
@@ -35,15 +35,15 @@ frameLength = int(0.1 * audioRate)
 print("Creating the Training Set")
 trainingSet = []
 targetSet = []
-for i in range(ethanTestVoice.size / frameLength):
-	startingIndex = frameLength * i
-	trainingSet.append(ethanTestVoice[startingIndex : startingIndex + frameLength])
-	targetSet.append([1, 0])
 
-for i in range(katieTestVoice.size / frameLength):
-	startingIndex = frameLength * i
-	trainingSet.append(katieTestVoice[startingIndex : startingIndex + frameLength])
-	targetSet.append([0, 1])
+#Get the audio data in audioFilesData and split the data into frames of `frameLength` size
+for data in audioFilesData:
+	voice = data[0]
+	classification = data[1]
+	for i in range(voice.size / frameLength):
+		startingIndex = frameLength * i
+		trainingSet.append(voice[startingIndex : startingIndex + frameLength])
+		targetSet.append(classification)
 
 print("Training MLP")
 mlp = MLPClassifier(hidden_layer_sizes=(frameLength/2), max_iter=100, verbose=True)
@@ -58,7 +58,7 @@ katieResults = []
 
 for i in range(ethanSampleVoice.size / frameLength):
 	startingIndex = frameLength * i
-	ethanResults.append(mlp.predict(ethanSampleVoice[startingIndex : startingIndex + frameLength]))
+	ethanResults.append(mlp.predict(np.array(ethanSampleVoice[startingIndex : startingIndex + frameLength]).reshape(1, -1)))
 
 print(np.sum(ethanResults, 0))
 
@@ -66,7 +66,7 @@ print("Katie Results:")
 
 for i in range(katieSampleVoice.size / frameLength):
 	startingIndex = frameLength * i
-	katieResults.append(mlp.predict(katieSampleVoice[startingIndex : startingIndex + frameLength]))
+	katieResults.append(mlp.predict(np.array(katieSampleVoice[startingIndex : startingIndex + frameLength]).reshape(1, -1)))
 
 print(np.sum(katieResults, 0))
 

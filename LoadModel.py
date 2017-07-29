@@ -21,7 +21,7 @@ print("Running Prediction...")
 results = []
 for i in range(data.size / frameSize):
 	startingIndex = i * frameSize
-	results.append(model.predict(data[startingIndex : startingIndex + frameSize]))
+	results.append(model.predict(np.array(data[startingIndex : startingIndex + frameSize]).reshape(1, -1)))
 
 print(results)
 print(np.sum(results, 0))
