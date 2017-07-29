@@ -7,6 +7,14 @@ import sys
 def normalize(data):
 	return data.astype(float) / data.max()
 
+def chunkAudio(audio, chunk_size, offset):
+	results = []
+	startingIndex = 0
+	while startingIndex + chunk_size < len(audio):
+		results.append(audio[startingIndex : startingIndex + chunk_size])
+		startingIndex += offset
+	return results
+
 
 print("Reading in Audio File...")
 audio = wav.read(sys.argv[2])
@@ -19,9 +27,8 @@ print("Loading MLP Model...")
 model = pickle.load(open(sys.argv[1], "rb"))
 print("Running Prediction...")
 results = []
-for i in range(data.size / frameSize):
-	startingIndex = i * frameSize
-	results.append(model.predict(np.array(data[startingIndex : startingIndex + frameSize]).reshape(1, -1)))
+for chunk in chunkAudio(data, frameSize, frameSize / 3):
+	results.append(model.predict(np.array(chunk).reshape(1, -1)))
 
 print(results)
 print(np.sum(results, 0))

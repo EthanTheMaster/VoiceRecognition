@@ -6,10 +6,20 @@ from sklearn.neural_network import MLPClassifier
 def normalizeAudio(audio):
 	return audio.astype(float) / audio.max()
 
+def chunkAudio(audio, chunk_size, offset):
+	results = []
+	startingIndex = 0
+	while startingIndex + chunk_size < len(audio):
+		results.append(audio[startingIndex : startingIndex + chunk_size])
+		startingIndex += offset
+	return results
+
 #Read in wav data
 #audioFilesData is a list of tuples containing the audio file data and the corresponding classification
 audioFilesData = []
+audioFilesData.append((wav.read("EthanTest.wav"), [1,0]))
 audioFilesData.append((wav.read("EthanTest2.wav"), [1,0]))
+audioFilesData.append((wav.read("KatieTest.wav"), [0,1]))
 audioFilesData.append((wav.read("KatieTest2.wav"), [0,1]))
 
 audioRate = audioFilesData[0][0][0]
@@ -40,9 +50,8 @@ targetSet = []
 for data in audioFilesData:
 	voice = data[0]
 	classification = data[1]
-	for i in range(voice.size / frameLength):
-		startingIndex = frameLength * i
-		trainingSet.append(voice[startingIndex : startingIndex + frameLength])
+	for chunk in chunkAudio(voice, frameLength, frameLength/3):
+		trainingSet.append(chunk)
 		targetSet.append(classification)
 
 print("Training MLP")
